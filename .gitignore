@@ -1,0 +1,41 @@
+# Binaries
+gh-flow
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build directories
+dist/
+build/
+
+# Config files (local)
+.env
+.env.local
+
+# Test repositories (for manual testing)
+test-repos/
