@@ -6,9 +6,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 )
 
 // DetectRepositories finds all git repositories in subdirectories
@@ -48,31 +45,12 @@ func HasUncommittedChanges(repoPath string) (bool, error) {
 
 // StashChanges stashes all changes in a repository
 func StashChanges(repoPath string) error {
-	// Verify it's a valid repo
-	_, err := git.PlainOpen(repoPath)
-	if err != nil {
-		return err
-	}
-
-	// Use git command for stash as go-git doesn't support it directly
 	return execGitCommand(repoPath, "stash", "push", "-m", "gh-flow auto-stash")
 }
 
 // CheckoutBranch switches to a branch
 func CheckoutBranch(repoPath, branch string) error {
-	repo, err := git.PlainOpen(repoPath)
-	if err != nil {
-		return err
-	}
-
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return err
-	}
-
-	return worktree.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(branch),
-	})
+	return execGitCommand(repoPath, "checkout", branch)
 }
 
 // Pull pulls latest changes from origin
@@ -82,50 +60,16 @@ func Pull(repoPath string) error {
 
 // CreateBranch creates and checks out a new branch
 func CreateBranch(repoPath, branchName string) error {
-	repo, err := git.PlainOpen(repoPath)
-	if err != nil {
-		return err
-	}
-
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return err
-	}
-
-	headRef, err := repo.Head()
-	if err != nil {
-		return err
-	}
-
-	// Create new branch from current HEAD
-	ref := plumbing.NewHashReference(plumbing.NewBranchReferenceName(branchName), headRef.Hash())
-	if err := repo.Storer.SetReference(ref); err != nil {
-		return err
-	}
-
-	// Checkout the new branch
-	return worktree.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(branchName),
-	})
+	return execGitCommand(repoPath, "checkout", "-b", branchName)
 }
 
 // GetCurrentBranch returns the name of the current branch
 func GetCurrentBranch(repoPath string) (string, error) {
-	repo, err := git.PlainOpen(repoPath)
+	output, err := execGitCommandOutput(repoPath, "branch", "--show-current")
 	if err != nil {
 		return "", err
 	}
-
-	head, err := repo.Head()
-	if err != nil {
-		return "", err
-	}
-
-	if !head.Name().IsBranch() {
-		return "", fmt.Errorf("HEAD is not a branch")
-	}
-
-	return head.Name().Short(), nil
+	return strings.TrimSpace(output), nil
 }
 
 // GetOriginBranch tries to determine from which branch the current branch was created
@@ -147,35 +91,12 @@ func GetOriginBranch(repoPath, currentBranch string) (string, error) {
 
 // AddAll stages all changes
 func AddAll(repoPath string) error {
-	repo, err := git.PlainOpen(repoPath)
-	if err != nil {
-		return err
-	}
-
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return err
-	}
-
-	return worktree.AddWithOptions(&git.AddOptions{
-		All: true,
-	})
+	return execGitCommand(repoPath, "add", "-A")
 }
 
 // Commit creates a commit with the given message
 func Commit(repoPath, message string) error {
-	repo, err := git.PlainOpen(repoPath)
-	if err != nil {
-		return err
-	}
-
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return err
-	}
-
-	_, err = worktree.Commit(message, &git.CommitOptions{})
-	return err
+	return execGitCommand(repoPath, "commit", "-m", message)
 }
 
 // Push pushes the current branch to origin
