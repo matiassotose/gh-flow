@@ -39,22 +39,11 @@ func DetectRepositories(root string) ([]string, error) {
 
 // HasUncommittedChanges checks if a repository has uncommitted changes
 func HasUncommittedChanges(repoPath string) (bool, error) {
-	repo, err := git.PlainOpen(repoPath)
+	output, err := execGitCommandOutput(repoPath, "status", "--porcelain")
 	if err != nil {
 		return false, err
 	}
-
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return false, err
-	}
-
-	status, err := worktree.Status()
-	if err != nil {
-		return false, err
-	}
-
-	return !status.IsClean(), nil
+	return strings.TrimSpace(output) != "", nil
 }
 
 // StashChanges stashes all changes in a repository
